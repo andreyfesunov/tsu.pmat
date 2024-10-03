@@ -4,18 +4,16 @@ from sys import stderr, exit
 from random import randint
 from math import inf
 
-def error_to_sdterr(msg):
-    print(msg, file = stderr)
-    exit(1)
 
 def validate_float(data):
     if not data:
-        error_to_sdterr("Error: No data provided")
+        raise Exception("No data provided")
 
     try:
         return float(data)
     except ValueError:
-        error_to_sdterr("Error: Please, enter a number")
+        raise Exception("Enter a number")
+
 
 def divide_by_random(number):
     random = randint(-10, 10)
@@ -23,5 +21,9 @@ def divide_by_random(number):
         return inf
     return number / random
 
-print(divide_by_random(validate_float(input())))
 
+try:
+    print(divide_by_random(validate_float(input())))
+except Exception as e:
+    print("Error: " + str(e), file=stderr)
+    exit(1)
