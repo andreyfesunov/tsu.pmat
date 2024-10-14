@@ -15,16 +15,16 @@ def validate_float(data):
         raise Exception("Enter a number")
 
 
-def divide_by_random(number):
-    random = randint(-10, 10)
-    if random == 0:
+def divide(numerator, denominator):
+    if denominator == 0:
         return inf
-    return number / random
+    return numerator / denominator
 
 
 def main():
     try:
-        print(divide_by_random(validate_float(input())))
+        random = randint(-10, 10)
+        print(divide(validate_float(input()), random))
     except Exception as e:
         print("Error: " + str(e), file=stderr)
         exit(1)
