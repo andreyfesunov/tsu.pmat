@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 
-from sys import stderr, exit
-from random import randint
 from math import inf
+from random import randint
+from sys import exit, stderr
 
 
 def validate_float(data):
@@ -22,8 +22,13 @@ def divide_by_random(number):
     return number / random
 
 
-try:
-    print(divide_by_random(validate_float(input())))
-except Exception as e:
-    print("Error: " + str(e), file=stderr)
-    exit(1)
+def main():
+    try:
+        print(divide_by_random(validate_float(input())))
+    except Exception as e:
+        print("Error: " + str(e), file=stderr)
+        exit(1)
+
+
+if __name__ == "__main__":
+    main()

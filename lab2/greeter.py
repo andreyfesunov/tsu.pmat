@@ -8,8 +8,7 @@ def validate_name(name):
     if not bool(re.match(r"^[A-Za-z]+$", name)):
         raise Exception("Wrong name pattern. Name must consist of letters")
     if not name[0].isupper():
-        raise Exception(
-            "Wrong name pattern. Name must begin with capital letter")
+        raise Exception("Wrong name pattern. Name must begin with capital letter")
 
 
 try:
