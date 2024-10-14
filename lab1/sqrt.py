@@ -1,10 +1,10 @@
 #!/usr/bin/python3
 
-from sys import stderr
 from math import sqrt
+from sys import stderr
 
 
-def main():
+def sqrt_from_stdin(filename):
     user_input = input()
 
     if not user_input:
@@ -18,12 +18,17 @@ def main():
     if number < 0:
         raise Exception("Can't take the sqrt of a negative number")
 
-    with open("output.txt", "a") as f:
+    with open(filename, "a") as f:
         print(sqrt(number), file=f)
 
 
-try:
+def main():
+    try:
+        sqrt_from_stdin("output.txt")
+    except Exception as e:
+        print("Error: " + str(e), file=stderr)
+        exit(1)
+
+
+if __name__ == "__main__":
     main()
-except Exception as e:
-    print("Error: " + str(e), file=stderr)
-    exit(1)
