@@ -24,13 +24,15 @@ def test_ok():
 
 
 def test_greet_names(capsys):
-    greeter.greet_names(["Alice", "Bob"])
+    for line in ["Alice", "Bob"]:
+        greeter.greet_name(line)
     captured = capsys.readouterr()
     assert "Nice to see you Alice!" in captured.out
     assert "Nice to see you Bob!" in captured.out
 
 
 def test_greet_names_invalid(capsys):
-    greeter.greet_names(["alice", "Bob123"])
+    for line in ["alice", "Bob123"]:
+        greeter.greet_name(line)
     captured = capsys.readouterr()
     assert captured.out == ""
