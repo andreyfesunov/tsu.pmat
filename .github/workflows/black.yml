@@ -1,4 +1,4 @@
-name: flake8 action
+name: black action
 
 on:
   push:
