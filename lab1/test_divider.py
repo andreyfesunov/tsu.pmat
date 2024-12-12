@@ -2,9 +2,8 @@
 
 from math import inf
 
-import pytest
-
 import divider
+import pytest
 
 # UNIT TESTS
 

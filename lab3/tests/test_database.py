@@ -2,7 +2,6 @@ import os
 import tempfile
 
 import pytest
-
 from database.database import Database, DepartmentTable, EmployeeTable
 
 
