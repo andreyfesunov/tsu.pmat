@@ -2,7 +2,13 @@ import os
 import tempfile
 
 import pytest
-from database.database import Database, DepartmentTable, EmployeeTable
+
+from database.database import (
+    Database,
+    DepartmentTable,
+    EmployeeTable,
+    PersonalPromosTable,
+)
 
 
 @pytest.fixture
@@ -21,6 +27,13 @@ def temp_department_file():
 
 
 @pytest.fixture
+def temp_promos_file():
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
+    yield temp_file.name
+    os.remove(temp_file.name)
+
+
+@pytest.fixture
 def database(temp_employee_file, temp_department_file):
     """Данная фикстура задает БД и определяет таблицы."""
     db = Database()
@@ -29,9 +42,12 @@ def database(temp_employee_file, temp_department_file):
     employee_table.FILE_PATH = temp_employee_file
     department_table = DepartmentTable()
     department_table.FILE_PATH = temp_department_file
+    promos_table = PersonalPromosTable()
+    promos_table.FILE_PATH = temp_promos_file
 
     db.register_table("employees", employee_table)
     db.register_table("departments", department_table)
+    db.register_table("promos", promos_table)
 
     return db
 

@@ -1,6 +1,7 @@
 import csv
 import os
 from abc import ABC
+from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 
@@ -13,6 +14,13 @@ class SingletonMeta(type):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+class DatabaseAggregateMethod(str, Enum):
+    AVG = "AVG"
+    MAX = "MAX"
+    MIN = "MIN"
+    COUNT = "COUNT"
 
 
 class Database(metaclass=SingletonMeta):
@@ -60,6 +68,26 @@ class Database(metaclass=SingletonMeta):
                     results.append(merged_dict)
 
         return results
+
+    def aggregate(
+        self, method: DatabaseAggregateMethod, table_name: str, column: str
+    ) -> int | float:
+        table = self.tables.get(table_name)
+
+        if not table:
+            raise ValueError("Table not exists")
+
+        values = [float(entry[column]) for entry in table.DATA]
+
+        match method:
+            case DatabaseAggregateMethod.AVG:
+                return sum(values) / len(values)
+            case DatabaseAggregateMethod.MAX:
+                return max(values)
+            case DatabaseAggregateMethod.MIN:
+                return min(values)
+            case DatabaseAggregateMethod.COUNT:
+                return len(values)
 
 
 class Table(ABC):
@@ -130,3 +158,10 @@ class DepartmentTable(CSVTable):
 
     ATTRS: Tuple[str, ...] = ("id", "department_name")
     FILE_PATH: str = "department_table.csv"
+
+
+class PersonalPromosTable(CSVTable):
+    """Таблица персональных скидок для сотрудников с вводом-выводом в/из CSV файла"""
+
+    ATTRS: Tuple[str, ...] = ("id", "employee_id", "percent")
+    FILE_PATH: str = "personal_promos_table.csv"
