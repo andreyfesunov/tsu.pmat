@@ -7,6 +7,7 @@ repos:
     rev: 5.13.2
     hooks:
       - id: isort
+        args: ["--profile", "black"]
   - repo: https://github.com/PyCQA/flake8
     rev: 7.1.1
     hooks:
@@ -18,4 +19,4 @@ repos:
         entry: bash -c "cd lab3 && poetry run pytest --cov-fail-under=100"
         language: system
         pass_filenames: false
-        always_run: true  
+        always_run: true

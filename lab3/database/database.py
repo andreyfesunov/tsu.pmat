@@ -43,6 +43,7 @@ class Database(metaclass=SingletonMeta):
         table = self.tables.get(table_name)
         return table.select(**kwargs) if table else None
 
+    # TODO refactor to token factory
     def join(
         self,
         table1_name: str,
