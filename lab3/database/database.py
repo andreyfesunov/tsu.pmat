@@ -46,39 +46,50 @@ class Database(metaclass=SingletonMeta):
     # TODO refactor to token factory
     def join(
         self,
-        table1_name: str,
-        table2_name: str,
+        table1_query: str | List[Dict[str, Union[str, int]]],
+        table2_query: str | List[Dict[str, Union[str, int]]],
         compare_func: Callable[[Dict[str, Any], Dict[str, Any]], bool],
-    ) -> List[Tuple[Dict[str, Any], Dict[str, Any]]]:
-        table1 = self.tables.get(table1_name)
-        table2 = self.tables.get(table2_name)
+    ) -> List[Dict[str, Union[str, int]]]:
+        table1 = (
+            self.tables.get(table1_query).DATA
+            if isinstance(table1_query, str)
+            else table1_query
+        )
+        table2 = (
+            self.tables.get(table2_query).DATA
+            if isinstance(table2_query, str)
+            else table2_query
+        )
+        prefix1 = f"{table1_query}." if isinstance(table1_query, str) else ""
+        prefix2 = f"{table2_query}." if isinstance(table2_query, str) else ""
 
         if not table1 or not table2:
             raise ValueError("One or both tables do not exist.")
 
         results = []
 
-        for entry1 in table1.DATA:
-            for entry2 in table2.DATA:
+        for entry1 in table1:
+            for entry2 in table2:
                 if compare_func(entry1, entry2):
-                    merged_dict = {f"{table1_name}.{k}": entry1[k] for k in entry1}
-                    merged_dict.update(
-                        {f"{table2_name}.{k}": entry2[k] for k in entry2}
-                    )
+                    merged_dict = {f"{prefix1}{k}": entry1[k] for k in entry1}
+                    merged_dict.update({f"{prefix2}{k}": entry2[k] for k in entry2})
 
                     results.append(merged_dict)
 
         return results
 
     def aggregate(
-        self, method: DatabaseAggregateMethod, table_name: str, column: str
+        self,
+        method: DatabaseAggregateMethod,
+        table: str | List[Dict[str, Union[str, int]]],
+        column: str,
     ) -> int | float:
-        table = self.tables.get(table_name)
+        table = self.tables.get(table).DATA if isinstance(table, str) else table
 
         if not table:
             raise ValueError("Table not exists")
 
-        values = [float(entry[column]) for entry in table.DATA]
+        values = [float(entry[column]) for entry in table]
 
         match method:
             case DatabaseAggregateMethod.AVG:
@@ -96,7 +107,7 @@ class Table(ABC):
 
     ATTRS: Tuple[str] = "id"
     UNIQUE_ATTRS: Tuple[str] = "id"
-
+    NAME = None
     DATA: List[Dict[str, Union[str, int]]] = []
 
     def insert(self, data: str) -> None:
@@ -149,6 +160,7 @@ class CSVTable(Table):
 class EmployeeTable(CSVTable):
     """Таблица сотрудников с методами ввода-вывода из файла CSV."""
 
+    NAME = "employees"
     ATTRS: Tuple[str] = ("id", "name", "age", "salary", "department_id")
     UNIQUE_ATTRS: Tuple[str] = ("id", "department_id")
     FILE_PATH: str = "employee_table.csv"
@@ -157,6 +169,7 @@ class EmployeeTable(CSVTable):
 class DepartmentTable(CSVTable):
     """Таблица подразделений с вводом-выводом в/из CSV файла."""
 
+    NAME = "departments"
     ATTRS: Tuple[str, ...] = ("id", "department_name")
     FILE_PATH: str = "department_table.csv"
 
@@ -164,5 +177,6 @@ class DepartmentTable(CSVTable):
 class PersonalPromosTable(CSVTable):
     """Таблица персональных скидок для сотрудников с вводом-выводом в/из CSV файла"""
 
+    NAME = "promos"
     ATTRS: Tuple[str, ...] = ("id", "employee_id", "percent")
     FILE_PATH: str = "personal_promos_table.csv"

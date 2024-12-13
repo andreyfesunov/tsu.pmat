@@ -4,6 +4,7 @@ import tempfile
 import pytest
 from database.database import (
     Database,
+    DatabaseAggregateMethod,
     DepartmentTable,
     EmployeeTable,
     PersonalPromosTable,
@@ -33,7 +34,7 @@ def temp_promos_file():
 
 
 @pytest.fixture
-def database(temp_employee_file, temp_department_file):
+def database(temp_employee_file, temp_department_file, temp_promos_file):
     """Данная фикстура задает БД и определяет таблицы."""
     db = Database()
 
@@ -44,16 +45,16 @@ def database(temp_employee_file, temp_department_file):
     promos_table = PersonalPromosTable()
     promos_table.FILE_PATH = temp_promos_file
 
-    db.register_table("employees", employee_table)
-    db.register_table("departments", department_table)
-    db.register_table("promos", promos_table)
+    db.register_table(EmployeeTable.NAME, employee_table)
+    db.register_table(DepartmentTable.NAME, department_table)
+    db.register_table(PersonalPromosTable.NAME, promos_table)
 
     return db
 
 
 def test_insert_employee(database):
-    database.insert("employees", "1 Alice 30 70000")
-    database.insert("employees", "2 Bob 28 60000")
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000")
+    database.insert(EmployeeTable.NAME, "2 Bob 28 60000")
 
     employee_data = database.select("employees", id=["1", "2"])
     assert len(employee_data) == 2
@@ -72,21 +73,21 @@ def test_insert_employee(database):
 
 
 def test_insert_department(database):
-    database.insert("employees", "1 Alice 30 70000")
-    database.insert("employees", "2 Alice 30 70000")
-    database.insert("employees", "1 Alice 30 70000 1")
-    database.insert("employees", "1 Alice 30 70000 2")
-    database.insert("employees", "2 Alice 30 70000 1")
-    database.insert("employees", "2 Alice 30 70000 2")
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000")
+    database.insert(EmployeeTable.NAME, "2 Alice 30 70000")
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000 1")
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000 2")
+    database.insert(EmployeeTable.NAME, "2 Alice 30 70000 1")
+    database.insert(EmployeeTable.NAME, "2 Alice 30 70000 2")
 
     with pytest.raises(ValueError):
-        database.insert("employees", "2 Alice 30 70000 2")
+        database.insert(EmployeeTable.NAME, "2 Alice 30 70000 2")
 
 
 def test_select_employees(database):
-    database.insert("employees", "1 Alice 30 70000")
-    database.insert("employees", "2 Max 21 54000")
-    database.insert("employees", "3 Alice 28 77000")
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000")
+    database.insert(EmployeeTable.NAME, "2 Max 21 54000")
+    database.insert(EmployeeTable.NAME, "3 Alice 28 77000")
 
     employee_data = database.select("employees", name=["Alice"])
     assert len(employee_data) == 2
@@ -99,12 +100,56 @@ def test_select_employees(database):
 
 
 def test_join_employees_departments(database):
-    database.insert("departments", "2 IU")
-    database.insert("employees", "1 Alice 30 70000 2")
+    database.insert(DepartmentTable.NAME, "2 IU")
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000 2")
 
     join_result = database.join(
-        "employees", "departments", lambda x, y: x["department_id"] == y["id"]
+        EmployeeTable.NAME,
+        DepartmentTable.NAME,
+        lambda x, y: x["department_id"] == y["id"],
     )
     assert len(join_result) == 1
-    assert join_result[0]["employees.id"] == "1"
-    assert join_result[0]["departments.id"] == "2"
+    assert join_result[0][f"{EmployeeTable.NAME}.id"] == "1"
+    assert join_result[0][f"{DepartmentTable.NAME}.id"] == "2"
+
+
+def test_aggregate(database):
+    database.insert(DepartmentTable.NAME, "2 IU")
+
+    database.insert(EmployeeTable.NAME, "1 Alice 30 70000 2")
+    database.insert(EmployeeTable.NAME, "2 Max 32 52000 2")
+
+    database.insert(PersonalPromosTable.NAME, "1 1 10")
+    database.insert(PersonalPromosTable.NAME, "2 1 12")
+    database.insert(PersonalPromosTable.NAME, "3 2 20")
+
+    join_result = database.join(
+        EmployeeTable.NAME,
+        DepartmentTable.NAME,
+        lambda x, y: x["department_id"] == y["id"],
+    )
+    join_result = database.join(
+        PersonalPromosTable.NAME,
+        join_result,
+        lambda x, y: x["employee_id"] == y["employees.id"],
+    )
+
+    max = database.aggregate(
+        DatabaseAggregateMethod.MAX, join_result, f"{PersonalPromosTable.NAME}.percent"
+    )
+    min = database.aggregate(
+        DatabaseAggregateMethod.MIN, join_result, f"{PersonalPromosTable.NAME}.percent"
+    )
+    avg = database.aggregate(
+        DatabaseAggregateMethod.AVG, join_result, f"{PersonalPromosTable.NAME}.percent"
+    )
+    count = database.aggregate(
+        DatabaseAggregateMethod.COUNT,
+        join_result,
+        f"{PersonalPromosTable.NAME}.percent",
+    )
+
+    assert max == 20
+    assert min == 10
+    assert avg == 14
+    assert count == 3
